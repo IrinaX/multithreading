@@ -1,55 +1,21 @@
 ﻿#include <iostream>// для cout
 #include <ctime> //для time
 #include <thread> //для работы с потоками
-//#include <chrono> //для sleep
 #include <algorithm> // подключаем sort
 #include <vector> // подключаем vector
-#include <windows.h>
+#include <windows.h>//winapi
 
-
-#define SIZE 100000//размер массива
+#define SIZE 50000//размер массива
 using namespace std;
-
 
 struct MyStruct
 {
-	//int arr[SIZE];
 	int* arr = new int[SIZE];//инициалиизация массива
 	int* bubbleResult = new int[SIZE]; //Выделение памяти для массива
 	int* quickResult = new int[SIZE]; //Выделение памяти для массива
 };
 
-
-
-/*void* bubble(int array[], int &test)//первый поток
-{
-	test = 12345;
-
-	int temp;// временная переменная для обмена элементов местами
-	for (int i = 0; i < SIZE - 1; i++) {// Сортировка массива пузырьком
-		for (int j = 0; j < SIZE - i - 1; j++) {// меняем элементы местами
-			if (array[j] > array[j + 1]) {
-				temp = array[j];
-				array[j] = array[j + 1];
-				array[j + 1] = temp;
-			}
-		}
-	}
-	return array;//возвращаем отсортированный массив
-}*/
-
-/*void* quick(int array1[])//второй поток
-{
-	vector<int> arrVector(array1, array1 + SIZE);
-	sort(arrVector.begin(), arrVector.end());//сортировка сравнением
-	copy(arrVector.begin(), arrVector.end(), array1);//преобразовываем вектор в массив элементов
-	return array1;//возвращаем отсортированный массив
-}
-*/
-
-
-
-DWORD WINAPI ThreadFun(LPVOID param) {
+DWORD WINAPI BubbleSort(LPVOID param) {
 	MyStruct* mystrct = (MyStruct*)param;
 	int temp;// временная переменная для обмена элементов местами
 	for (int i = 0; i < SIZE - 1; i++) {// Сортировка массива пузырьком
@@ -63,152 +29,174 @@ DWORD WINAPI ThreadFun(LPVOID param) {
 	}
 	return 0;
 }
-/*DWORD WINAPI ThreadFunSec(LPVOID lpParam) {
-	vector<int> arrVector(array1, array1 + SIZE);
+DWORD WINAPI QuickSort(LPVOID param) {
+	MyStruct* mystrct = (MyStruct*)param;
+	vector<int> arrVector(mystrct->quickResult, mystrct->quickResult + SIZE);
 	sort(arrVector.begin(), arrVector.end());//сортировка сравнением
-	copy(arrVector.begin(), arrVector.end(), array1);//преобразовываем вектор в массив элементов
-	return array1;//возвращаем отсортированный массив
+	copy(arrVector.begin(), arrVector.end(), mystrct->quickResult);//преобразовываем вектор в массив элементов
+	return 0;
 }
-*/
 
 int main()
 {
 	setlocale(LC_ALL, "Rus");
-	//int arr[SIZE];//инициалиизация массива
 	srand(time(NULL));
-	HANDLE hThreadFirts;
-	//HANDLE hThreadSec;
-	DWORD ThreadIDFirst;
-	//DWORD ThreadIDSec;
-	//MyStruct ms;
+	cout << "Wait..." << endl;
 	MyStruct* mystrct = new MyStruct;
 	for (int i = 0; i < SIZE; i++)//заполнение массива рандомными числами [-25000;25000)
 	{
 		mystrct->arr[i] = rand() % SIZE - (SIZE / 2);
 	}
-
-	//int* bubbleResult = new int[SIZE]; //Выделение памяти для массива
-	//int* quickResult = new int[SIZE]; //Выделение памяти для массива
 	for (int i = 0; i < SIZE; i++) { //копируем изначальный массив в новые массивы
 		mystrct->bubbleResult[i] = mystrct->arr[i];
 		mystrct->quickResult[i] = mystrct->arr[i];
 	}
-	int test = 0;
-
-	//MyStruct* mystrct = (MyStruct*)malloc(sizeof(MyStruct));
-
-	hThreadFirts = CreateThread(
-		NULL,
-		0,
-		ThreadFun,
-		mystrct,
-		0,
-		&ThreadIDFirst);
-	/*hThreadSec = CreateThread(
-		NULL,
-		0,
-		ThreadFunSec,
-		NULL,
-		0,
-		&ThreadIDSec);*/
-
-	cout << "IDFirst: " << ThreadIDFirst << endl;
-	/*cout << "IDSec: " << ThreadIDSec << endl;*/
-
-
-	/*HANDLE hThread[2];
-
-	hThread[0] = CreateThread(NULL, 0, ThreadFun,mystrct,0,&ThreadIDFirst);
-	hThread[1] = CreateThread(NULL, 0, IdleThread, 0, 0, &id);
-
-	WaitForMultipleObjects(2, hThread, TRUE, INFINITE);*/
-
-	WaitForSingleObject(hThreadFirts, INFINITE);
-
-	/*FILETIME ftCreate, ftExit, ftKernel, ftUser;
-	for (DWORD i = 0; i < 2; i++)
-	{
-		GetThreadTimes(hThread[i], &ftCreate, &ftExit, &ftKernel, &ftUser);
-
-		printf("Reported time for thread %dn", i + 1);
-
-		SYSTEMTIME st;
-		FileTimeToSystemTime(&ftKernel, &st);
-		printf("Kernel: %2.2d:%2.2d.%3.3dn", st.wMinute, st.wSecond,
-			st.wMilliseconds);
-
-		FileTimeToSystemTime(&ftUser, &st);
-		printf("User: %2.2d:%2.2d.%3.3dnn", st.wMinute, st.wSecond,
-			st.wMilliseconds);
-	}
-	*/
-
-
-
-
-
-
-
-
-
-
-	// выделить непосредственно память
-	FILETIME ftCreationTime, ftExitTime, ftKernelTime, ftUserTime;
-	SYSTEMTIME stCreationTime, stExitTime, stKernelTime, stUserTime;
-	// использовать так:
+	DWORD ThreadIDFirst, ThreadIDSec;
+	HANDLE hThread[2];
+	hThread[0] = CreateThread(NULL, 0, BubbleSort, mystrct, 0, &ThreadIDFirst);//создание потока
+	hThread[1] = CreateThread(NULL, 0, QuickSort, mystrct, 0, &ThreadIDSec);
+	WaitForMultipleObjects(2, hThread, TRUE, INFINITE);//ожидание завершения работы потоков
+	FILETIME ftFirstTh[4], ftSecTh[4];
+	SYSTEMTIME stFirstTh[4], stSecTh[4];
 	GetThreadTimes(
-		hThreadFirts,        //HANDLE потока
-		&ftCreationTime, //Время до создания потока
-		&ftExitTime,     //Время до заврешения потока
-		&ftKernelTime,   //Время, затраченное потоком на код ОС
-		&ftUserTime);    //Время затраченное потоком на код программы
+		hThread[0],      //HANDLE потока 
+		&ftFirstTh[0],   //Время создания потока
+		&ftFirstTh[1],   //Время заверешения потока
+		&ftFirstTh[2],   //Время в режиме ядра
+		&ftFirstTh[3]);  //Время в режиме юзера
+	GetThreadTimes(hThread[1], &ftSecTh[0], &ftSecTh[1], &ftSecTh[2], &ftSecTh[3]);
+	CloseHandle(hThread[0]);//закрывает дескриптор открытого объекта
+	CloseHandle(hThread[1]);
+	for (DWORD i = 0; i < 4; i++)
+	{
+		FileTimeToSystemTime(&ftFirstTh[i], &stFirstTh[i]);
+		FileTimeToSystemTime(&ftSecTh[i], &stSecTh[i]);
+	}
+	hThread[0] = CreateThread(NULL, 0, BubbleSort, mystrct, 0, &ThreadIDFirst);
+	hThread[1] = CreateThread(NULL, 0, QuickSort, mystrct, 0, &ThreadIDSec);
+	WaitForMultipleObjects(2, hThread, TRUE, INFINITE);
+	SetThreadPriority(hThread[0], THREAD_PRIORITY_HIGHEST);
+	SetThreadPriority(hThread[1], THREAD_PRIORITY_LOWEST);
+	FILETIME ftFirstThPRIORITY[4], ftSecThPRIORITY[4];
+	SYSTEMTIME stFirstThPRIORITY[4], stSecThPRIORITY[4];
+	GetThreadTimes(hThread[0], &ftFirstThPRIORITY[0], &ftFirstThPRIORITY[1], &ftFirstThPRIORITY[2], &ftFirstThPRIORITY[3]);
+	GetThreadTimes(hThread[1], &ftSecThPRIORITY[0], &ftSecThPRIORITY[1], &ftSecThPRIORITY[2], &ftSecThPRIORITY[3]);
+	CloseHandle(hThread[0]);
+	CloseHandle(hThread[1]);
+	for (DWORD i = 0; i < 4; i++)
+	{
+		FileTimeToSystemTime(&ftFirstThPRIORITY[i], &stFirstThPRIORITY[i]);
+		FileTimeToSystemTime(&ftSecThPRIORITY[i], &stSecThPRIORITY[i]);
+	}
+	string firstThTime[4], secThTime[4], firstThTimePRIORIPY[4], secThTimePRIORIPY[4];
+	for (int i = 0; i < 4; i++)
+	{
+		char buffer[256], buffer2[256], buffer3[256], buffer4[256];
+		if (i == 3 || i == 2)
+		{
+			sprintf_s(buffer,
+				"%02d:%02d.%03d",
+				stFirstTh[i].wMinute,
+				stFirstTh[i].wSecond,
+				stFirstTh[i].wMilliseconds);
+			sprintf_s(buffer2,
+				"%02d:%02d.%03d",
+				stSecTh[i].wMinute,
+				stSecTh[i].wSecond,
+				stSecTh[i].wMilliseconds);
+			sprintf_s(buffer3,
+				"%02d:%02d.%03d",
+				stFirstThPRIORITY[i].wMinute,
+				stFirstThPRIORITY[i].wSecond,
+				stFirstThPRIORITY[i].wMilliseconds);
+			sprintf_s(buffer4,
+				"%02d:%02d.%03d",
+				stSecThPRIORITY[i].wMinute,
+				stSecThPRIORITY[i].wSecond,
+				stSecThPRIORITY[i].wMilliseconds);
 
-	FileTimeToSystemTime(&ftCreationTime, &stCreationTime);
-	cout << stCreationTime.wYear << " " << stCreationTime.wMonth << " " << stCreationTime.wDay << " " << stCreationTime.wHour << " " << stCreationTime.wMinute << " " << stCreationTime.wSecond << endl;
-	FileTimeToSystemTime(&ftExitTime, &stExitTime);
-	cout << stExitTime.wYear << " " << stExitTime.wMonth << " " << stExitTime.wDay << " " << stExitTime.wHour << " " << stExitTime.wMinute << " " << stExitTime.wSecond << endl;
+			firstThTime[i] = buffer;
+			secThTime[i] = buffer2;
+			firstThTimePRIORIPY[i] = buffer3;
+			secThTimePRIORIPY[i] = buffer4;
+		}
+		else
+		{
+			sprintf_s(buffer,
+				"%d-%02d-%02d %02d:%02d:%02d.%03d",
+				stFirstTh[i].wYear,
+				stFirstTh[i].wMonth,
+				stFirstTh[i].wDay,
+				stFirstTh[i].wHour,
+				stFirstTh[i].wMinute,
+				stFirstTh[i].wSecond,
+				stFirstTh[i].wMilliseconds);
+			sprintf_s(buffer2,
+				"%d-%02d-%02d %02d:%02d:%02d.%03d",
+				stSecTh[i].wYear,
+				stSecTh[i].wMonth,
+				stSecTh[i].wDay,
+				stSecTh[i].wHour,
+				stSecTh[i].wMinute,
+				stSecTh[i].wSecond,
+				stSecTh[i].wMilliseconds);
+			sprintf_s(buffer3,
+				"%d-%02d-%02d %02d:%02d:%02d.%03d",
+				stFirstThPRIORITY[i].wYear,
+				stFirstThPRIORITY[i].wMonth,
+				stFirstThPRIORITY[i].wDay,
+				stFirstThPRIORITY[i].wHour,
+				stFirstThPRIORITY[i].wMinute,
+				stFirstThPRIORITY[i].wSecond,
+				stFirstThPRIORITY[i].wMilliseconds);
+			sprintf_s(buffer4,
+				"%d-%02d-%02d %02d:%02d:%02d.%03d",
+				stSecThPRIORITY[i].wYear,
+				stSecThPRIORITY[i].wMonth,
+				stSecThPRIORITY[i].wDay,
+				stSecThPRIORITY[i].wHour,
+				stSecThPRIORITY[i].wMinute,
+				stSecThPRIORITY[i].wSecond,
+				stSecThPRIORITY[i].wMilliseconds);
 
-
-
-	FileTimeToSystemTime(&ftKernelTime, &stKernelTime);
-	//printf("Kernel: %2.2d:%2.2d.%3.3dn", stKernelTime.wMinute, stKernelTime.wSecond, stKernelTime.wMilliseconds);
-	cout << stKernelTime.wSecond << " " << stKernelTime.wMilliseconds << endl;
-	FileTimeToSystemTime(&ftUserTime, &stUserTime);
-	cout << stUserTime.wSecond << " " << stUserTime.wMilliseconds << endl;
-
-
-
-	CloseHandle(hThreadFirts);
-	/*CloseHandle(hThreadSec);*/
-
-
-
-	/*thread th1(bubble, bubbleResult,ref(test));//старт первый поток
-	thread th2(quick, quickResult);//старт второй поток
-	th1.join();//ожидаем пока потоки завершатся
-	th2.join();
-cout << test << endl;*/
-
-
-/*cout << "Изначальный массив: " << endl;
-for (int i = 0; i < SIZE; i++)
-{
-	cout << mystrct->arr[i] << " ";//вывод изначального массива на экран
-}
-cout << "\n" << endl;
-cout << "Результат работы первого потока: " << endl;
-for (int i = 0; i < SIZE; i++) {// Вывод отсортированного массива из первого потока на экран
-	cout << mystrct->bubbleResult[i] << " ";
-}
-cout << "\n" << endl;
-cout << "Результат работы второго потока: " << endl;
-for (int i = 0; i < SIZE; i++) {// Вывод отсортированного массива со второго потока на экран
-	cout << mystrct->quickResult[i] << " ";
-}
-cout << "\n" << endl;*/
+			firstThTime[i] = buffer;
+			secThTime[i] = buffer2;
+			firstThTimePRIORIPY[i] = buffer3;
+			secThTimePRIORIPY[i] = buffer4;
+		}
+	}
+	cout << "\t\t\t\t    Same priority \t\t\t\t\t   Different priority" << endl;
+	cout << "\t\t\t    1\t\t\t\t2\t\t\t  1(High)\t\t       2(Low)" << endl;
+	cout << "Start time\t" << firstThTime[0] << "     " << secThTime[0] << "      " << firstThTimePRIORIPY[0] << "     " << secThTimePRIORIPY[0] << endl;
+	cout << "End time\t" << firstThTime[1] << "     " << secThTime[1] << "      " << firstThTimePRIORIPY[1] << "     " << secThTimePRIORIPY[1] << endl;
+	cout << "Kernel time\t\t" << firstThTime[2] << "\t\t    " << secThTime[2] << "\t\t\t " << firstThTimePRIORIPY[2] << "\t\t     " << secThTimePRIORIPY[2] << endl;
+	cout << "User time\t\t" << firstThTime[3] << "\t\t    " << secThTime[3] << "\t\t\t " << firstThTimePRIORIPY[3] << "\t\t     " << secThTimePRIORIPY[3] << endl;
+	cout << endl;
+	cout << "Вывести массивы? 1 - да, 0 - нет : " << endl;
+	int choise;
+	cin >> choise;
+	if (choise == 1)
+	{
+		cout << "Изначальный массив: " << endl;
+		for (int i = 0; i < SIZE; i++)
+		{
+			cout << mystrct->arr[i] << " ";//вывод изначального массива на экран
+		}
+		cout << "\n" << endl;
+		cout << "Результат работы первого потока: " << endl;
+		for (int i = 0; i < SIZE; i++) {// Вывод отсортированного массива из первого потока
+			cout << mystrct->bubbleResult[i] << " ";
+		}
+		cout << "\n" << endl;
+		cout << "Результат работы второго потока: " << endl;
+		for (int i = 0; i < SIZE; i++) {// Вывод отсортированного массива со второго потока
+			cout << mystrct->quickResult[i] << " ";
+		}
+		cout << "\n" << endl;
+	}
 	delete[] mystrct->arr; // очистка памяти
-	delete[] mystrct->bubbleResult; // очистка памяти
-	delete[] mystrct->quickResult; // очистка памяти
+	delete[] mystrct->bubbleResult;
+	delete[] mystrct->quickResult;
 	system("pause");
 	return 0;
 }
